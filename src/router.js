@@ -1,10 +1,10 @@
 import { config } from '../config.js';
-import * as db from './database.js';
+import * as db from './database-sqljs.js';
 
 /**
  * Route request to appropriate handler
  */
-export function routeRequest(method, pathname, query, body) {
+export async function routeRequest(method, pathname, query, body) {
   const basePath = config.api.basePath;
   
   if (!pathname.startsWith(basePath)) {
@@ -23,13 +23,13 @@ export function routeRequest(method, pathname, query, body) {
 
   try {
     if (method === 'GET') {
-      return handleGet(table, id, query, action);
+      return await handleGet(table, id, query, action);
     } else if (method === 'POST') {
-      return handlePost(table, body, query);
+      return await handlePost(table, body, query);
     } else if (method === 'PUT') {
-      return handlePut(table, id, body);
+      return await handlePut(table, id, body);
     } else if (method === 'DELETE') {
-      return handleDelete(table, id);
+      return await handleDelete(table, id);
     } else if (method === 'OPTIONS') {
       return { status: 200, body: {} };
     }
@@ -43,22 +43,22 @@ export function routeRequest(method, pathname, query, body) {
 /**
  * Handle GET requests
  */
-function handleGet(table, id, query, action) {
+async function handleGet(table, id, query, action) {
   // Special endpoints
   if (table === 'schema' && id) {
-    const schema = db.getTableSchema(id);
+    const schema = await db.getTableSchema(id);
     return { status: 200, body: { schema } };
   }
 
   if (table === 'tables') {
-    const tables = db.getTables();
+    const tables = await db.getTables();
     return { status: 200, body: { tables } };
   }
 
   // Query endpoint - for executing custom queries
   if (table === 'query' && query.sql) {
     try {
-      const records = db.executeQuery(query.sql, []);
+      const records = await db.executeQuery(query.sql, []);
       return {
         status: 200,
         body: {
@@ -74,7 +74,7 @@ function handleGet(table, id, query, action) {
   // Standard table queries
   if (id) {
     // Get single record
-    const record = db.selectById(table, id);
+    const record = await db.selectById(table, id);
     if (!record) {
       return { status: 404, body: { error: 'Record not found' } };
     }
@@ -85,7 +85,7 @@ function handleGet(table, id, query, action) {
   if (query.where) {
     try {
       const params = query.params ? JSON.parse(query.params) : [];
-      const records = db.selectWhere(table, query.where, params);
+      const records = await db.selectWhere(table, query.where, params);
       const limit = Math.min(parseInt(query.limit) || 100, 1000);
       const sliced = records.slice(0, limit);
       
@@ -106,7 +106,7 @@ function handleGet(table, id, query, action) {
   // Get all records with pagination
   const limit = Math.min(parseInt(query.limit) || 100, 1000);
   const offset = parseInt(query.offset) || 0;
-  const records = db.selectAll(table, limit, offset);
+  const records = await db.selectAll(table, limit, offset);
   
   return {
     status: 200,
@@ -122,12 +122,12 @@ function handleGet(table, id, query, action) {
 /**
  * Handle POST requests
  */
-function handlePost(table, body, query) {
+async function handlePost(table, body, query) {
   if (!body || typeof body !== 'object') {
     return { status: 400, body: { error: 'Invalid request body' } };
   }
   
-  const result = db.insert(table, body);
+  const result = await db.insert(table, body);
   
   return {
     status: 201,
@@ -142,7 +142,7 @@ function handlePost(table, body, query) {
 /**
  * Handle PUT requests
  */
-function handlePut(table, id, body) {
+async function handlePut(table, id, body) {
   if (!id) {
     return { status: 400, body: { error: 'ID required for update' } };
   }
@@ -152,12 +152,12 @@ function handlePut(table, id, body) {
   }
   
   // Check if record exists
-  const record = db.selectById(table, id);
+  const record = await db.selectById(table, id);
   if (!record) {
     return { status: 404, body: { error: 'Record not found' } };
   }
   
-  const result = db.update(table, id, body);
+  const result = await db.update(table, id, body);
   
   return {
     status: 200,
@@ -171,18 +171,18 @@ function handlePut(table, id, body) {
 /**
  * Handle DELETE requests
  */
-function handleDelete(table, id) {
+async function handleDelete(table, id) {
   if (!id) {
     return { status: 400, body: { error: 'ID required for delete' } };
   }
   
   // Check if record exists
-  const record = db.selectById(table, id);
+  const record = await db.selectById(table, id);
   if (!record) {
     return { status: 404, body: { error: 'Record not found' } };
   }
   
-  const result = db.deleteRecord(table, id);
+  const result = await db.deleteRecord(table, id);
   
   return {
     status: 200,
