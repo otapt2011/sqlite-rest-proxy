@@ -1,6 +1,6 @@
 import http from 'http';
 import { config } from '../config.js';
-import { initDatabase, closeDatabase } from './database.js';
+import { initDatabase, closeDatabase } from './database-sqljs.js';
 import { routeRequest } from './router.js';
 
 /**
@@ -67,7 +67,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // Route request
-    const response = routeRequest(req.method, pathname, query, body);
+    const response = await routeRequest(req.method, pathname, query, body);
 
     res.writeHead(response.status);
     res.end(JSON.stringify(response.body));
@@ -81,9 +81,9 @@ const server = http.createServer(async (req, res) => {
 /**
  * Start server
  */
-function start() {
+async function start() {
   try {
-    initDatabase();
+    await initDatabase();
     
     server.listen(config.server.port, config.server.host, () => {
       console.log(`\n✓ Server running at http://${config.server.host}:${config.server.port}`);
