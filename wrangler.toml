@@ -1,0 +1,9 @@
+name = "sqlite-rest-proxy"
+main = "src/cloudflare-worker.js"
+compatibility_date = "2024-01-01"
+
+[env.production]
+name = "sqlite-rest-proxy-prod"
+
+[env.staging]
+name = "sqlite-rest-proxy-staging"
