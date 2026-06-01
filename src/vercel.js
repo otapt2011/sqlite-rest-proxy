@@ -1,4 +1,4 @@
-import { initDatabase } from './database.js';
+import { initDatabase } from './database-sqljs.js';
 import { routeRequest } from './router.js';
 
 /**
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
   try {
     // Initialize database
-    initDatabase();
+    await initDatabase();
 
     // Parse request body
     let body = null;
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     const query = Object.fromEntries(url.searchParams);
 
     // Route request
-    const response = routeRequest(req.method, pathname, query, body);
+    const response = await routeRequest(req.method, pathname, query, body);
 
     res.status(response.status).json(response.body);
   } catch (error) {
