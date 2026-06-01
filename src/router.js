@@ -19,12 +19,13 @@ export function routeRequest(method, pathname, query, body) {
 
   const table = pathParts[0];
   const id = pathParts[1];
+  const action = pathParts[2];
 
   try {
     if (method === 'GET') {
-      return handleGet(table, id, query);
+      return handleGet(table, id, query, action);
     } else if (method === 'POST') {
-      return handlePost(table, body);
+      return handlePost(table, body, query);
     } else if (method === 'PUT') {
       return handlePut(table, id, body);
     } else if (method === 'DELETE') {
@@ -42,7 +43,35 @@ export function routeRequest(method, pathname, query, body) {
 /**
  * Handle GET requests
  */
-function handleGet(table, id, query) {
+function handleGet(table, id, query, action) {
+  // Special endpoints
+  if (table === 'schema' && id) {
+    const schema = db.getTableSchema(id);
+    return { status: 200, body: { schema } };
+  }
+
+  if (table === 'tables') {
+    const tables = db.getTables();
+    return { status: 200, body: { tables } };
+  }
+
+  // Query endpoint - for executing custom queries
+  if (table === 'query' && query.sql) {
+    try {
+      const records = db.executeQuery(query.sql, []);
+      return {
+        status: 200,
+        body: {
+          data: records,
+          count: records.length,
+        },
+      };
+    } catch (error) {
+      return { status: 400, body: { error: error.message } };
+    }
+  }
+
+  // Standard table queries
   if (id) {
     // Get single record
     const record = db.selectById(table, id);
@@ -50,6 +79,28 @@ function handleGet(table, id, query) {
       return { status: 404, body: { error: 'Record not found' } };
     }
     return { status: 200, body: record };
+  }
+  
+  // Handle WHERE clause queries
+  if (query.where) {
+    try {
+      const params = query.params ? JSON.parse(query.params) : [];
+      const records = db.selectWhere(table, query.where, params);
+      const limit = Math.min(parseInt(query.limit) || 100, 1000);
+      const sliced = records.slice(0, limit);
+      
+      return {
+        status: 200,
+        body: {
+          data: sliced,
+          limit,
+          count: sliced.length,
+          total: records.length,
+        },
+      };
+    } catch (error) {
+      return { status: 400, body: { error: error.message } };
+    }
   }
   
   // Get all records with pagination
@@ -71,7 +122,7 @@ function handleGet(table, id, query) {
 /**
  * Handle POST requests
  */
-function handlePost(table, body) {
+function handlePost(table, body, query) {
   if (!body || typeof body !== 'object') {
     return { status: 400, body: { error: 'Invalid request body' } };
   }
