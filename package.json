@@ -19,7 +19,7 @@
   "author": "otapt2011",
   "license": "MIT",
   "dependencies": {
-    "sql.js": "^3.49"
+    "sql.js": "^1.14.1"
   },
   "devDependencies": {}
 }
