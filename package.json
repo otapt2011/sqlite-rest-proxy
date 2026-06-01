@@ -19,7 +19,7 @@
   "author": "otapt2011",
   "license": "MIT",
   "dependencies": {
-    "better-sqlite3": "^9.2.2"
+    "sql.js": "^9.2.2"
   },
   "devDependencies": {}
 }
