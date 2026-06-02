@@ -21,7 +21,7 @@
   "author": "otapt2011",
   "license": "MIT",
   "dependencies": {
-    "@tursodatabase/serverless": "^0.4.0",
-    "sql.js": "^1.14.1"
-  }
+  "@libsql/client": "^0.15.3",
+  "sql.js": "^1.14.1"
+}
 }
